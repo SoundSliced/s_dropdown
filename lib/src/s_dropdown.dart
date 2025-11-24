@@ -60,7 +60,7 @@ class SDropdownController {
 /// - Full control over widget width and height
 /// - Simplified API focused on String items only
 /// - Custom overlay system using CompositedTransformTarget/Follower
-/// - No external package dependencies beyond Flutter
+/// - Minimal external dependencies: uses a small set of helper packages for responsive sizing, indexed lists, and animation helpers
 /// - Comprehensive styling through SDropdownDecoration
 /// - Support for item-specific text styles
 /// - Scroll controller support for precise positioning

@@ -1,8 +1,8 @@
-# SDropdown Widget Documentation
+# SDropdown Widget Documentation (v1.0.0)
 
 ## Overview
 
-`SDropdown` is a fully custom dropdown widget built from scratch for String items, providing complete control over dimensions and behavior. It's designed as a native Flutter implementation with no external package dependencies.
+`SDropdown` is a fully custom dropdown widget built from scratch for String items, providing complete control over dimensions and behavior. It's designed as a native Flutter implementation and uses a small set of optional helper packages for advanced features and responsive sizing.
 
 ## Architecture
 
@@ -17,9 +17,12 @@
 
 - ✅ **Complete Dimension Control**: Width, height, overlay width, and overlay height
 - ✅ **Native Flutter Performance**: Built with CompositedTransformTarget/Follower
-- ✅ **Zero External Dependencies**: No third-party packages required
+- ✅ **Minimal External Dependencies**: Uses a small set of optional helper packages for advanced features (responsive sizing, indexed lists, and animation helpers)
 - ✅ **Comprehensive Styling**: Every visual aspect is customizable
 - ✅ **Advanced Functionality**: Scroll control, item exclusion, validation, icons
+- ✅ **Custom display names**: Use `customItemsNamesDisplayed` to show alternate labels while keeping item values unchanged
+- ✅ **Item-specific styles**: Apply per-item text styles with `itemSpecificStyles`
+- ✅ **Selection header override**: Use `selectedItemText` to show a custom header for a selected item
 - ✅ **Responsive Design**: Support for responsive sizing with .w and .h extensions
 
 ## Architecture Deep Dive
@@ -272,7 +275,7 @@ SDropdown(
 ## Performance Characteristics
 
 ### Memory Usage
-- **Lightweight**: No external dependencies, minimal memory footprint
+- **Lightweight**: Minimal external dependencies (used only for optional helper features in examples), minimal memory footprint
 - **Efficient State Management**: Only rebuilds necessary components
 - **Proper Cleanup**: Automatic overlay disposal prevents memory leaks
 
