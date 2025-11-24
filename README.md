@@ -1,6 +1,6 @@
 # s_dropdown
 
-A native Flutter dropdown widget (SDropdown) focused on String items with full control over dimensions, layout, and styling.
+Flexible, lightweight Flutter dropdown (SDropdown) offering precise overlay control, keyboard navigation, controller-based actions, per-item styles, and responsive sizing.
 
 Current version: 1.0.1
 
