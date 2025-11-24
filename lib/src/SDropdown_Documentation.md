@@ -1,4 +1,4 @@
-# SDropdown Widget Documentation (v1.0.0)
+# SDropdown Widget Documentation (v1.0.2)
 
 ## Overview
 

@@ -1,6 +1,12 @@
 ## 1.0.2
 
-* Version 1.0.2
+* Maintenance and documentation release
+	- Added comprehensive `example/` app demonstrating basic and advanced use cases.
+	- Added widget tests and advanced tests for key features (overlay, controller actions, excludeSelected, custom display names, validator integration, item-specific styles).
+	- Updated `README.md` to include examples and advanced usage scenarios, with responsive sizing examples.
+	- Added `LICENSE` file (MIT) and updated `pubspec.yaml` with license metadata.
+	- Improved internal docs (`lib/src/SDropdown_Documentation.md`) and corrected wording on dependency usage.
+	- Minor fixes to test timing and overlay animation handling to avoid flakiness.
 
 ## 1.0.1
 

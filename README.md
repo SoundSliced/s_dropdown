@@ -2,7 +2,7 @@
 
 Flexible, lightweight Flutter dropdown (SDropdown) offering precise overlay control, keyboard navigation, controller-based actions, per-item styles, and responsive sizing.
 
-Current version: 1.0.1
+Current version: 1.0.2
 
 ## Installation
 
@@ -11,7 +11,7 @@ For use, add the following to your package's `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  s_dropdown: ^1.0.1
+  s_dropdown: ^1.0.2
 ```
 
 
@@ -101,7 +101,7 @@ controller.selectHighlighted();
 
 - Full control over dropdown/button width, height, and overlay dimensions
 - Native overlay positioning using CompositedTransformTarget/Follower
-- No external runtime dependencies beyond Flutter (sizer may be used for examples)
+- Minimal external dependencies: optional helper packages are used only in examples (e.g., `sizer`) for responsive sizing and layout.
 - Advanced styling with `SDropdownDecoration`
 - Keyboard & pointer interaction, highlight management, and overlay controls via `SDropdownController`
 
