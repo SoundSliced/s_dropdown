@@ -42,6 +42,26 @@ class SDropdownController {
     _state?._moveHighlight(-1);
   }
 
+  /// Highlight the item at the given original index (index in the `items` list)
+  void highlightAtIndex(int index) {
+    _state?._setHighlightAtIndex(index);
+  }
+
+  /// Highlight the item with the given value
+  void highlightItem(String value) {
+    _state?._setHighlightForValue(value);
+  }
+
+  /// Select (and highlight) the item at the given original index (index in the `items` list)
+  void selectIndex(int index) {
+    _state?._selectByIndex(index);
+  }
+
+  /// Select (and highlight) the item with the given value
+  void selectItem(String value) {
+    _state?._selectByValue(value);
+  }
+
   void selectHighlighted() {
     _state?._selectHighlightedItem();
   }
@@ -668,6 +688,102 @@ class _SDropdownState extends State<SDropdown> {
     }
 
     _selectItem(_visibleOptions[index].value);
+  }
+
+  void _setHighlightAtIndex(int originalIndex) {
+    // Map original index (index in widget.items) to visible overlay index
+    final int visibleIndex =
+        _visibleOptions.indexWhere((o) => o.originalIndex == originalIndex);
+    if (visibleIndex == -1) {
+      // Item not visible (could be excluded). If overlay is closed, open it to recompute.
+      if (!_isExpanded) {
+        _openFromController();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final int idx = _visibleOptions
+              .indexWhere((o) => o.originalIndex == originalIndex);
+          if (idx != -1) {
+            _setStateSafely(() {
+              _keyboardNavigationActive = true;
+              _highlightedIndex = idx;
+              _scrollTargetIndex = idx;
+            }, rebuildOverlay: true);
+          }
+        });
+      }
+      return;
+    }
+
+    if (!_isExpanded) {
+      _openFromController();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _setStateSafely(() {
+          _keyboardNavigationActive = true;
+          _highlightedIndex = visibleIndex;
+          _scrollTargetIndex = visibleIndex;
+        }, rebuildOverlay: true);
+      });
+      return;
+    }
+
+    _setStateSafely(() {
+      _keyboardNavigationActive = true;
+      _highlightedIndex = visibleIndex;
+      _scrollTargetIndex = visibleIndex;
+    }, rebuildOverlay: true);
+  }
+
+  void _setHighlightForValue(String value) {
+    final int visibleIndex =
+        _visibleOptions.indexWhere((o) => o.value == value);
+    if (visibleIndex == -1) {
+      if (!_isExpanded) {
+        _openFromController();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final int idx = _visibleOptions.indexWhere((o) => o.value == value);
+          if (idx != -1) {
+            _setStateSafely(() {
+              _keyboardNavigationActive = true;
+              _highlightedIndex = idx;
+              _scrollTargetIndex = idx;
+            }, rebuildOverlay: true);
+          }
+        });
+      }
+      return;
+    }
+
+    if (!_isExpanded) {
+      _openFromController();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _setStateSafely(() {
+          _keyboardNavigationActive = true;
+          _highlightedIndex = visibleIndex;
+          _scrollTargetIndex = visibleIndex;
+        }, rebuildOverlay: true);
+      });
+      return;
+    }
+
+    _setStateSafely(() {
+      _keyboardNavigationActive = true;
+      _highlightedIndex = visibleIndex;
+      _scrollTargetIndex = visibleIndex;
+    }, rebuildOverlay: true);
+  }
+
+  void _selectByIndex(int originalIndex) {
+    if (originalIndex < 0 || originalIndex >= widget.items.length) {
+      return;
+    }
+    final String value = widget.items[originalIndex];
+    _selectItem(value);
+  }
+
+  void _selectByValue(String value) {
+    if (!widget.items.contains(value)) {
+      return;
+    }
+    _selectItem(value);
   }
 
   void _setPointerHighlight(int index) {

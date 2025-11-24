@@ -90,6 +90,61 @@ void main() {
     expect(selected, 'B');
   });
 
+  testWidgets(
+      'controller highlightAtIndex/selectIndex and highlightItem/selectItem',
+      (WidgetTester tester) async {
+    final controller = SDropdownController();
+    final items = ['A', 'B', 'C', 'D'];
+    String? selected;
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: SDropdown(
+            items: items,
+            controller: controller,
+            hintText: 'Pick',
+            onChanged: (value) => selected = value,
+            width: 200,
+            height: 48,
+          ),
+        ),
+      ),
+    ));
+
+    // Use selectIndex to pick 'D' (index 3)
+    controller.selectIndex(3);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(selected, 'D');
+
+    // Now use selectItem to pick 'B'
+    controller.selectItem('B');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(selected, 'B');
+
+    // Open overlay and test highlightAtIndex
+    controller.open();
+    await tester.pumpAndSettle(const Duration(milliseconds: 300));
+    controller.highlightAtIndex(2); // 'C'
+    await tester.pumpAndSettle(const Duration(milliseconds: 200));
+    controller.selectHighlighted();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(selected, 'C');
+
+    // Use highlightItem and selectHighlighted to validate string-based highlight
+    controller.open();
+    await tester.pumpAndSettle(const Duration(milliseconds: 300));
+    controller.highlightItem('A');
+    await tester.pumpAndSettle(const Duration(milliseconds: 200));
+    controller.selectHighlighted();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(selected, 'A');
+  });
+
   testWidgets('customItemsNamesDisplayed uses custom display text',
       (WidgetTester tester) async {
     final items = ['apple', 'banana', 'cherry'];

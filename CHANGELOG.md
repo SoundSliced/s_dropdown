@@ -1,3 +1,7 @@
+## 1.1.0
+
+* Version 1.1.0
+
 ## 1.0.2
 
 * Maintenance and documentation release
