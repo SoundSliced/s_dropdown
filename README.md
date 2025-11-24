@@ -2,9 +2,18 @@
 
 A native Flutter dropdown widget (SDropdown) focused on String items with full control over dimensions, layout, and styling.
 
-Current version: 1.0.0
+Current version: 1.0.1
 
 ## Installation
+
+
+For use, add the following to your package's `pubspec.yaml`:
+
+```yaml
+dependencies:
+  s_dropdown: ^1.0.1
+```
+
 
 For local development, add the following to your package's `pubspec.yaml`:
 
