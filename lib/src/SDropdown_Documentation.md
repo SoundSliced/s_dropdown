@@ -1,4 +1,4 @@
-# SDropdown Widget Documentation (v1.0.2)
+# SDropdown Widget Documentation (v1.1.0)
 
 ## Overview
 
@@ -24,6 +24,7 @@
 - ✅ **Item-specific styles**: Apply per-item text styles with `itemSpecificStyles`
 - ✅ **Selection header override**: Use `selectedItemText` to show a custom header for a selected item
 - ✅ **Responsive Design**: Support for responsive sizing with .w and .h extensions
+- ✅ **Controller highlight/select by index/value**: `SDropdownController` now supports `highlightAtIndex`, `highlightItem`, `selectIndex`, and `selectItem` for programmatic highlighting and selection by original index or value.
 
 ## Architecture Deep Dive
 
@@ -206,6 +207,22 @@ SDropdown(
   overlayHeight: 30.h,      // 30% of screen height
   // ... other properties
 )
+
+### Programmatic (controller) usage
+```dart
+final controller = SDropdownController();
+
+SDropdown(
+  items: ['A','B','C'],
+  controller: controller,
+);
+
+controller.open();
+controller.highlightAtIndex(2); // highlight the 3rd item (index 2)
+controller.highlightItem('B'); // highlight item 'B'
+controller.selectIndex(1); // select the 2nd item programmatically
+controller.selectItem('A'); // select item 'A' programmatically
+```
 ```
 
 ## Best Practices

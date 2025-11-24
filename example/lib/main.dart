@@ -32,6 +32,7 @@ class _ExampleHomeState extends State<ExampleHome> {
   String? _selected;
   final SDropdownController _controller = SDropdownController();
   final SDropdownController _controller2 = SDropdownController();
+  final SDropdownController _controller3 = SDropdownController();
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +101,7 @@ class _ExampleHomeState extends State<ExampleHome> {
               width: 260,
               height: 48,
               excludeSelected: true,
+              controller: _controller3,
               customItemsNamesDisplayed: [
                 '🍎 Apple',
                 '🍌 Banana',
@@ -165,6 +167,26 @@ class _ExampleHomeState extends State<ExampleHome> {
                   onPressed: () => _controller2.selectHighlighted(),
                   child: const Text('Select Highlighted'),
                 ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: () => _controller2.highlightAtIndex(2),
+                  child: const Text('Highlight Index 2'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: () => _controller2.highlightItem('Apple'),
+                  child: const Text('Highlight Item Apple'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: () => _controller2.selectIndex(1),
+                  child: const Text('Select Index 1'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: () => _controller2.selectItem('Cherry'),
+                  child: const Text('Select Item Cherry'),
+                ),
               ],
             ),
             Row(
@@ -182,6 +204,25 @@ class _ExampleHomeState extends State<ExampleHome> {
                 ElevatedButton(
                   onPressed: () => _controller.toggle(),
                   child: const Text('Toggle'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: () => _controller3.open(),
+                  child: const Text('Open Exclude'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: () => _controller3.highlightAtIndex(0),
+                  child: const Text('Try Highlight Selected (Index 0)'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: () => _controller3.selectIndex(2),
+                  child: const Text('Select Index 2'),
                 ),
               ],
             ),

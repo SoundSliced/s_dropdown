@@ -145,6 +145,44 @@ void main() {
     expect(selected, 'A');
   });
 
+  testWidgets(
+      'highlightAtIndex on excluded selected item does not highlight but selectIndex still works',
+      (WidgetTester tester) async {
+    final controller = SDropdownController();
+    final items = ['A', 'B', 'C'];
+    String? selected = 'A';
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: SDropdown(
+            items: items,
+            selectedItem: selected,
+            excludeSelected: true,
+            controller: controller,
+            hintText: 'Pick',
+            onChanged: (value) => selected = value,
+            width: 200,
+            height: 48,
+          ),
+        ),
+      ),
+    ));
+
+    // Try to highlight selected item (index 0) while it's excluded
+    controller.highlightAtIndex(0);
+    await tester.pumpAndSettle(const Duration(milliseconds: 300));
+    expect(controller.isExpanded, isTrue);
+    // 'A' should not be present in the overlay as it's excluded
+    expect(find.text('A').evaluate().length, equals(1));
+
+    // Now select index 2 to change selection
+    controller.selectIndex(2);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(selected, 'C');
+  });
+
   testWidgets('customItemsNamesDisplayed uses custom display text',
       (WidgetTester tester) async {
     final items = ['apple', 'banana', 'cherry'];

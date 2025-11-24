@@ -44,21 +44,29 @@ class SDropdownController {
 
   /// Highlight the item at the given original index (index in the `items` list)
   void highlightAtIndex(int index) {
+    /// Highlight the item at `index` where `index` represents
+    /// the index in the original `items` list passed to `SDropdown`.
+    /// If the overlay is not open, this will open it and then highlight the item.
     _state?._setHighlightAtIndex(index);
   }
 
   /// Highlight the item with the given value
   void highlightItem(String value) {
+    /// Highlight the item that has the given string `value`.
+    /// If the overlay is not open, this will open it and then highlight the item.
     _state?._setHighlightForValue(value);
   }
 
   /// Select (and highlight) the item at the given original index (index in the `items` list)
   void selectIndex(int index) {
+    /// Select an item using its original index in the `items` list.
+    /// This will also trigger `onChanged` and close the overlay.
     _state?._selectByIndex(index);
   }
 
   /// Select (and highlight) the item with the given value
   void selectItem(String value) {
+    /// Select an item using its string value. This will trigger `onChanged` and close the overlay.
     _state?._selectByValue(value);
   }
 

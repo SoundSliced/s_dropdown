@@ -2,7 +2,7 @@
 
 Flexible, lightweight Flutter dropdown (SDropdown) offering precise overlay control, keyboard navigation, controller-based actions, per-item styles, and responsive sizing.
 
-Current version: 1.0.2
+Current version: 1.1.0
 
 ## Installation
 
@@ -11,7 +11,7 @@ For use, add the following to your package's `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  s_dropdown: ^1.0.2
+  s_dropdown: ^1.1.0
 ```
 
 
@@ -95,6 +95,33 @@ SDropdown(
 controller.open();
 controller.highlightNext();
 controller.selectHighlighted();
+
+// Highlight/select by index or item value
+controller.highlightAtIndex(1); // highlight the 2nd item
+controller.highlightItem('B'); // highlight item 'B' by value
+controller.selectIndex(2); // select the 3rd item programmatically
+controller.selectItem('A'); // select item 'A' programmatically
+// Note: highlightAtIndex/selectIndex use indices from the original `items` list (0-based). If `excludeSelected` is true, the overlay may not show the item until re-opened and the highlight may be adjusted accordingly.
+
+### Controller behavior with `excludeSelected`
+
+When using `excludeSelected: true` the currently selected item is removed from the overlay list. `highlightAtIndex` and `highlightItem` try to map the given index/value to the currently visible overlay entries — if the item is excluded the highlight won't apply.
+
+However, `selectIndex` and `selectItem` operate on the logical value and will select items regardless of their current visibility in the overlay. Example:
+
+```dart
+final controller = SDropdownController();
+
+SDropdown(
+  items: ['Apple','Banana','Cherry'],
+  excludeSelected: true,
+  selectedItem: 'Apple', // Apple will be excluded from overlay
+  controller: controller,
+);
+
+controller.highlightAtIndex(0); // Will open the overlay but cannot highlight 'Apple' because it's excluded
+controller.selectIndex(2); // Selects 'Cherry' regardless; onChanged will run and overlay will close
+```
 ```
 
 ## Features
