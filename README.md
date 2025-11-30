@@ -4,6 +4,12 @@ Flexible, lightweight Flutter dropdown (SDropdown) offering precise overlay cont
 
 Current version: 1.1.0
 
+## Example app
+
+See the `example/` directory which demonstrates basic usage of the package.
+
+![SDropdown example GIF](https://raw.githubusercontent.com/SoundSliced/s_dropdown/main/example/assets/example.gif)
+
 ## Installation
 
 

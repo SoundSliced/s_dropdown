@@ -1,6 +1,7 @@
 import 'package:assorted_layout_widgets/assorted_layout_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:indexscroll_listview_builder/indexscroll_listview_builder.dart';
 import 'package:sizer/sizer.dart';
 import 'package:soundsliced_tween_animation_builder/soundsliced_tween_animation_builder.dart';
@@ -209,6 +210,15 @@ class SDropdown extends StatefulWidget {
   final int? autoScrollMaxFrameDelay;
   final int? autoScrollEndOfFrameDelay;
 
+  /// Whether to enable keyboard navigation (arrow keys, enter, escape)
+  final bool useKeyboardNavigation;
+
+  /// Optional FocusNode for keyboard navigation. If not provided and useKeyboardNavigation is true, an internal FocusNode will be created.
+  final FocusNode? focusNode;
+
+  /// Whether to request focus on initialization when useKeyboardNavigation is true
+  final bool requestFocusOnInit;
+
   const SDropdown({
     super.key,
     required this.items,
@@ -252,6 +262,9 @@ class SDropdown extends StatefulWidget {
     this.controller,
     this.autoScrollMaxFrameDelay,
     this.autoScrollEndOfFrameDelay,
+    this.useKeyboardNavigation = true,
+    this.focusNode,
+    this.requestFocusOnInit = false,
   }) : assert(
           initialItem == null,
           'Use selectedItem instead of initialItem',
@@ -273,6 +286,13 @@ class _SDropdownState extends State<SDropdown> {
   List<_DropdownOption> _visibleOptions = const [];
   int? _highlightedIndex;
   bool _keyboardNavigationActive = false;
+
+  FocusNode? _internalFocusNode;
+
+  FocusNode? get _effectiveFocusNode {
+    if (!widget.useKeyboardNavigation) return null;
+    return widget.focusNode ?? _internalFocusNode;
+  }
 
   static const double _itemExtent = 35.0;
 
@@ -328,6 +348,14 @@ class _SDropdownState extends State<SDropdown> {
     }
   }
 
+  void _requestFocusIfNeeded() {
+    if (!mounted || !widget.enabled) return;
+    final FocusNode? fn = _effectiveFocusNode;
+    if (fn != null && !fn.hasFocus) {
+      FocusScope.of(context).requestFocus(fn);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -343,6 +371,21 @@ class _SDropdownState extends State<SDropdown> {
     widget.controller?._attach(this);
 
     _visibleOptions = _computeVisibleOptions();
+
+    _syncInternalFocusNode();
+  }
+
+  void _syncInternalFocusNode() {
+    final bool needsInternal =
+        widget.useKeyboardNavigation && widget.focusNode == null;
+    if (needsInternal) {
+      _internalFocusNode ??= FocusNode(debugLabel: 'SDropdownInternal');
+    } else {
+      if (_internalFocusNode != null && !needsInternal) {
+        _internalFocusNode!.dispose();
+        _internalFocusNode = null;
+      }
+    }
   }
 
   @override
@@ -370,7 +413,15 @@ class _SDropdownState extends State<SDropdown> {
       widget.controller?._attach(this);
     }
 
+    _syncInternalFocusNode();
+
     if (!widget.enabled && _isExpanded) {
+      _closeWithoutSelection();
+    }
+
+    if (!widget.useKeyboardNavigation &&
+        oldWidget.useKeyboardNavigation &&
+        _isExpanded) {
       _closeWithoutSelection();
     }
 
@@ -403,12 +454,65 @@ class _SDropdownState extends State<SDropdown> {
     _overlayEntry?.remove();
     _overlayEntry = null;
 
+    _internalFocusNode?.dispose();
+
     super.dispose();
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+
+    if (key == LogicalKeyboardKey.arrowDown) {
+      if (!_isExpanded) {
+        _showOverlay();
+      } else {
+        _moveHighlight(1);
+      }
+      return KeyEventResult.handled;
+    }
+
+    if (key == LogicalKeyboardKey.arrowUp) {
+      if (!_isExpanded) {
+        _showOverlay();
+      } else {
+        _moveHighlight(-1);
+      }
+      return KeyEventResult.handled;
+    }
+
+    if (key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter ||
+        key == LogicalKeyboardKey.space) {
+      if (_isExpanded) {
+        _selectHighlightedItem();
+      } else {
+        _showOverlay();
+      }
+      return KeyEventResult.handled;
+    }
+
+    if (key == LogicalKeyboardKey.tab) {
+      if (_isExpanded) {
+        _closeWithoutSelection();
+      }
+      return KeyEventResult.ignored;
+    }
+
+    if (key == LogicalKeyboardKey.escape ||
+        key == LogicalKeyboardKey.backspace) {
+      if (_isExpanded) {
+        _closeWithoutSelection();
+        return KeyEventResult.handled;
+      }
+    }
+
+    return KeyEventResult.ignored;
   }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    final dropdownWidget = SizedBox(
       width: widget.width,
       height: widget.height,
       child: Transform.scale(
@@ -418,6 +522,53 @@ class _SDropdownState extends State<SDropdown> {
           link: _layerLink,
           child: _buildDropdownButton(),
         ),
+      ),
+    );
+
+    if (!widget.useKeyboardNavigation) {
+      return dropdownWidget;
+    }
+
+    return Focus(
+      focusNode: _effectiveFocusNode,
+      autofocus: widget.requestFocusOnInit,
+      canRequestFocus: widget.enabled,
+      onKeyEvent: _handleKeyEvent,
+      child: Builder(
+        builder: (context) {
+          final hasFocus = Focus.of(context).hasFocus;
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 140),
+            curve: Curves.easeOut,
+            decoration: BoxDecoration(
+              borderRadius:
+                  widget.closedBorderRadius ?? BorderRadius.circular(8),
+              boxShadow: hasFocus
+                  ? [
+                      BoxShadow(
+                        color: Colors.blue.shade600.withValues(alpha: 0.45),
+                        blurRadius: 6,
+                        spreadRadius: 0.5,
+                      ),
+                    ]
+                  : null,
+              border: Border.all(
+                width: hasFocus ? 1 : 0.5,
+                color: hasFocus
+                    ? Colors.blue.shade600
+                    : (widget.closedBorder?.top.color ?? Colors.transparent),
+              ),
+            ),
+            child: Listener(
+              onPointerDown: (_) {
+                if (!hasFocus && _effectiveFocusNode != null) {
+                  FocusScope.of(context).requestFocus(_effectiveFocusNode);
+                }
+              },
+              child: dropdownWidget,
+            ),
+          );
+        },
       ),
     );
   }
@@ -430,6 +581,7 @@ class _SDropdownState extends State<SDropdown> {
     if (_isExpanded) {
       _closeWithoutSelection();
     } else {
+      _requestFocusIfNeeded();
       _showOverlay();
     }
   }
@@ -438,6 +590,9 @@ class _SDropdownState extends State<SDropdown> {
     if (!widget.enabled || _isExpanded) {
       return;
     }
+    // Ensure the dropdown gains focus when opened programmatically so that
+    // keyboard navigation works immediately without requiring a tap.
+    _requestFocusIfNeeded();
     _showOverlay();
   }
 
@@ -456,6 +611,9 @@ class _SDropdownState extends State<SDropdown> {
     if (_overlayEntry != null || !mounted) {
       return;
     }
+
+    // Ensure focus when showing overlay from any path (tap, keyboard, or controller)
+    _requestFocusIfNeeded();
 
     _refreshVisibleOptions(keepHighlight: false);
 
@@ -663,6 +821,8 @@ class _SDropdownState extends State<SDropdown> {
   }
 
   void _moveHighlight(int step) {
+    // If focus was lost, ensure it is requested before handling navigation
+    _requestFocusIfNeeded();
     if (!_isExpanded) {
       _openFromController();
       return;
@@ -686,6 +846,7 @@ class _SDropdownState extends State<SDropdown> {
   }
 
   void _selectHighlightedItem() {
+    _requestFocusIfNeeded();
     if (!_isExpanded || _visibleOptions.isEmpty) {
       return;
     }
@@ -699,6 +860,7 @@ class _SDropdownState extends State<SDropdown> {
   }
 
   void _setHighlightAtIndex(int originalIndex) {
+    _requestFocusIfNeeded();
     // Map original index (index in widget.items) to visible overlay index
     final int visibleIndex =
         _visibleOptions.indexWhere((o) => o.originalIndex == originalIndex);
@@ -741,6 +903,7 @@ class _SDropdownState extends State<SDropdown> {
   }
 
   void _setHighlightForValue(String value) {
+    _requestFocusIfNeeded();
     final int visibleIndex =
         _visibleOptions.indexWhere((o) => o.value == value);
     if (visibleIndex == -1) {
@@ -1151,6 +1314,9 @@ extension SDropdownExtension on SDropdown {
     bool? validateOnChange,
     SDropdownDecoration? decoration,
     SDropdownController? controller,
+    bool? useKeyboardNavigation,
+    FocusNode? focusNode,
+    bool? requestFocusOnInit,
   }) {
     return SDropdown(
       key: key,
@@ -1196,6 +1362,10 @@ extension SDropdownExtension on SDropdown {
       headerExpandedColor: headerExpandedColor,
       selectedItemText: selectedItemText,
       customItemsNamesDisplayed: customItemsNamesDisplayed,
+      useKeyboardNavigation:
+          useKeyboardNavigation ?? this.useKeyboardNavigation,
+      focusNode: focusNode ?? this.focusNode,
+      requestFocusOnInit: requestFocusOnInit ?? this.requestFocusOnInit,
     );
   }
 }

@@ -223,6 +223,8 @@ controller.highlightItem('B'); // highlight item 'B'
 controller.selectIndex(1); // select the 2nd item programmatically
 controller.selectItem('A'); // select item 'A' programmatically
 ```
+
+Note: When you call `controller.open()`, the dropdown will automatically request focus (when `useKeyboardNavigation` is true), so you can immediately use the arrow keys and Enter/Escape without first clicking the widget. If you supply a custom `FocusNode`, focus will be requested on that node.
 ```
 
 ## Best Practices
