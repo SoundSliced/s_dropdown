@@ -1,6 +1,12 @@
 ## 2.0.0
 
-* Version 2.0.0
+This release introduces first-class keyboard navigation and polishes the example app.
+
+Changes:
+- New: keyboard navigation (Arrow Up/Down, Enter/Space, Escape) when `useKeyboardNavigation` is enabled.
+- Programmatic open now auto-requests focus so keyboard navigation works immediately without tapping the widget first. Affected controller paths: `open`, `toggle`, `highlightNext/Previous`, `highlightAtIndex`, `highlightItem`, and `selectHighlighted`.
+- Example page fully revamped: sections, responsive Wrap controls, icons, tooltips, helpful descriptions, and a clean selection summary.
+- Documentation updates: clarified controller behavior and focus on programmatic open; README reflects the new example and features.
 
 ## 1.1.0
 

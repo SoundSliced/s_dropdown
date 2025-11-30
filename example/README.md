@@ -10,7 +10,8 @@ This is a simple Flutter application that demonstrates how to use the `SDropdown
 - Item-specific styles
 - Responsive sizes with `sizer` (the app uses `Sizer` for percentage-based widths/heights)
 - Controller-based programmatic actions (open/close/highlight/select)
- - Controller-based programmatic actions (open/close/highlight/select/ highlightAtIndex/ highlightItem/ selectIndex/ selectItem)
+ - Controller-based programmatic actions (open/close/toggle/highlight/select/ highlightAtIndex/ highlightItem/ selectIndex/ selectItem)
+ - Programmatic open requests focus automatically, enabling immediate keyboard navigation (arrow keys, Enter/Escape)
 
 The app lives in `example/lib/main.dart` and is intended to mirror README examples.
 
@@ -30,4 +31,7 @@ final controller = SDropdownController();
 controller.open();
 controller.highlightAtIndex(2);
 controller.selectItem('Banana');
+
+// With focus auto-request, you can use keyboard immediately:
+// Arrow keys to move, Enter to select, Escape to close.
 ```

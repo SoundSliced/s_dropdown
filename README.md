@@ -2,13 +2,14 @@
 
 Flexible, lightweight Flutter dropdown (SDropdown) offering precise overlay control, keyboard navigation, controller-based actions, per-item styles, and responsive sizing.
 
-Current version: 1.1.0
+Current version: 2.0.0
 
 ## Example app
 
 See the `example/` directory which demonstrates basic usage of the package.
 
 ![SDropdown example GIF](https://raw.githubusercontent.com/SoundSliced/s_dropdown/main/example/assets/example.gif)
+Shown above: the example app from `example/` with grouped sections, responsive controls, and controller-driven actions.
 
 ## Installation
 
@@ -17,7 +18,7 @@ For use, add the following to your package's `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  s_dropdown: ^1.1.0
+  s_dropdown: ^2.0.0
 ```
 
 
@@ -109,6 +110,8 @@ controller.selectIndex(2); // select the 3rd item programmatically
 controller.selectItem('A'); // select item 'A' programmatically
 // Note: highlightAtIndex/selectIndex use indices from the original `items` list (0-based). If `excludeSelected` is true, the overlay may not show the item until re-opened and the highlight may be adjusted accordingly.
 
+Note: When you call `controller.open()` (and other controller actions), the dropdown requests focus automatically (when `useKeyboardNavigation` is true), so you can immediately use arrow keys and Enter/Escape without clicking the widget first.
+
 ### Controller behavior with `excludeSelected`
 
 When using `excludeSelected: true` the currently selected item is removed from the overlay list. `highlightAtIndex` and `highlightItem` try to map the given index/value to the currently visible overlay entries — if the item is excluded the highlight won't apply.
@@ -137,6 +140,7 @@ controller.selectIndex(2); // Selects 'Cherry' regardless; onChanged will run an
 - Minimal external dependencies: optional helper packages are used only in examples (e.g., `sizer`) for responsive sizing and layout.
 - Advanced styling with `SDropdownDecoration`
 - Keyboard & pointer interaction, highlight management, and overlay controls via `SDropdownController`
+  - Programmatic open requests focus automatically to enable immediate keyboard navigation.
 
 ### Advanced features
 
@@ -151,7 +155,14 @@ controller.selectIndex(2); // Selects 'Cherry' regardless; onChanged will run an
 
 ## Example
 
-See the `example/` folder for a runnable Flutter example: it includes a small app that demonstrates common usages and `SDropdownController` actions.
+See the `example/` folder for a runnable Flutter example. It demonstrates:
+
+- Basic usage with selection
+- Decoration + overlay sizing
+- Excluding the selected item with custom display names
+- Selected text override
+- Validator + item-specific styles + responsive sizing
+- Controller demo: open/close/toggle, highlight/select by index/value
 
 ## Running tests
 
