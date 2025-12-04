@@ -1,3 +1,18 @@
+
+## 2.1.0
+
+This release adds programmatic navigation methods and improves control accessibility in dropdown overlays.
+
+Changes:
+- New: `selectNext()` and `selectPrevious()` controller methods for programmatic navigation between items with wrapping support.
+- New: `tapRegionGroupId` property exposed from `SDropdownController` to enable advanced TapRegion grouping for custom controls without dismissing the dropdown overlay.
+- Fixed: Autoscroll to selected item now works correctly when opening the dropdown with `excludeSelected: false`.
+- Improved: Keyboard navigation and item selection logic for better edge-case handling.
+
+## 2.0.1
+
+- upgraded dependencies 
+
 ## 2.0.0
 
 This release introduces first-class keyboard navigation and polishes the example app.

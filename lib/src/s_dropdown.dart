@@ -1,9 +1,8 @@
-import 'package:assorted_layout_widgets/assorted_layout_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:indexscroll_listview_builder/indexscroll_listview_builder.dart';
-import 'package:sizer/sizer.dart';
+
 import 'package:soundsliced_tween_animation_builder/soundsliced_tween_animation_builder.dart';
 
 import 's_dropdown_decoration.dart';
@@ -11,8 +10,14 @@ import 's_dropdown_decoration.dart';
 class SDropdownController {
   _SDropdownState? _state;
 
+  /// Unique tap region group ID generated when controller is created.
+  /// Available immediately without needing state attachment.
+  final Object tapRegionGroupId = Object();
+
   void _attach(_SDropdownState state) {
     _state = state;
+    // Share the controller's tapRegionGroupId with the state
+    state.tapRegionID = tapRegionGroupId;
   }
 
   void _detach(_SDropdownState state) {
@@ -22,6 +27,12 @@ class SDropdownController {
   }
 
   bool get isExpanded => _state?._isExpanded ?? false;
+
+  /// Get the tap region group ID used by this dropdown.
+  /// Use this ID to group control buttons with the dropdown so they won't trigger
+  /// the onTapOutside handler. Wrap your buttons with TapRegion(groupId: tapRegionGroupId, ...)
+  /// This ID is available immediately and doesn't require state attachment.
+  // Object? get tapRegionGroupId => _state?.tapRegionID;
 
   void open() {
     _state?._openFromController();
@@ -45,6 +56,10 @@ class SDropdownController {
 
   /// Highlight the item at the given original index (index in the `items` list)
   void highlightAtIndex(int index) {
+    if ((_state?._isExpanded == false)) {
+      _state?._openFromController();
+    }
+
     /// Highlight the item at `index` where `index` represents
     /// the index in the original `items` list passed to `SDropdown`.
     /// If the overlay is not open, this will open it and then highlight the item.
@@ -73,6 +88,16 @@ class SDropdownController {
 
   void selectHighlighted() {
     _state?._selectHighlightedItem();
+  }
+
+  /// Select the next item in the list. If none is selected, selects the first item.
+  void selectNext() {
+    _state?._selectNextItem();
+  }
+
+  /// Select the previous item in the list. If none is selected, selects the first item.
+  void selectPrevious() {
+    _state?._selectPreviousItem();
   }
 
   void closeWithoutSelection() {
@@ -275,6 +300,7 @@ class SDropdown extends StatefulWidget {
 }
 
 class _SDropdownState extends State<SDropdown> {
+  Object? tapRegionID;
   String? _currentSelection;
   bool _isExpanded = false;
   final LayerLink _layerLink = LayerLink();
@@ -617,6 +643,19 @@ class _SDropdownState extends State<SDropdown> {
 
     _refreshVisibleOptions(keepHighlight: false);
 
+    // Calculate initial highlight and scroll target BEFORE building overlay
+    int? initialHighlight;
+    if (_visibleOptions.isNotEmpty) {
+      if (_currentSelection != null) {
+        final int selectedIndex = _visibleOptions
+            .indexWhere((option) => option.value == _currentSelection);
+        if (selectedIndex != -1) {
+          initialHighlight = selectedIndex;
+        }
+      }
+      initialHighlight ??= 0;
+    }
+
     final OverlayState? overlayState = Overlay.maybeOf(context);
     if (overlayState == null) {
       return;
@@ -625,23 +664,32 @@ class _SDropdownState extends State<SDropdown> {
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
     final Size size = renderBox.size;
 
+    // Set state BEFORE building the overlay so IndexScrollListViewBuilder has the correct initial values
+    setState(() {
+      _isExpanded = true;
+      _keyboardNavigationActive = true;
+      _animationTrigger = true;
+      _highlightedIndex = initialHighlight;
+      _scrollTargetIndex = initialHighlight;
+    });
+
     _overlayEntry = OverlayEntry(
       builder: (context) => _buildOverlay(size),
     );
 
     overlayState.insert(_overlayEntry!);
 
-    _setStateSafely(() {
-      _isExpanded = true;
-      _keyboardNavigationActive = true;
-      _animationTrigger = true;
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _ensureHighlightInitialized();
-      }
-    });
+    // Ensure scroll happens after the list is built and controller is attached
+    if (initialHighlight != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scrollTargetIndex != initialHighlight) {
+          setState(() {
+            _scrollTargetIndex = initialHighlight;
+          });
+          _scheduleOverlayRebuild();
+        }
+      });
+    }
   }
 
   Future<void> _removeOverlay() async {
@@ -813,11 +861,15 @@ class _SDropdownState extends State<SDropdown> {
       _setStateSafely(() {
         _highlightedIndex = nextHighlight;
         _keyboardNavigationActive = true;
+        // Set scrollTargetIndex to trigger scroll
+        _scrollTargetIndex = nextHighlight;
+      }, rebuildOverlay: true);
+    } else if (_scrollTargetIndex != nextHighlight) {
+      // If highlight didn't change but scroll target is different, update it
+      _setStateSafely(() {
         _scrollTargetIndex = nextHighlight;
       }, rebuildOverlay: true);
     }
-
-    _ensureHighlightedVisible();
   }
 
   void _moveHighlight(int step) {
@@ -825,6 +877,21 @@ class _SDropdownState extends State<SDropdown> {
     _requestFocusIfNeeded();
     if (!_isExpanded) {
       _openFromController();
+      // After opening, schedule the highlight move for the next frame
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _isExpanded && _visibleOptions.isNotEmpty) {
+          final int currentIndex = _highlightedIndex ?? 0;
+          int nextIndex = (currentIndex + step) % _visibleOptions.length;
+          if (nextIndex < 0) {
+            nextIndex += _visibleOptions.length;
+          }
+          _setStateSafely(() {
+            _keyboardNavigationActive = true;
+            _highlightedIndex = nextIndex;
+            _scrollTargetIndex = nextIndex;
+          }, rebuildOverlay: true);
+        }
+      });
       return;
     }
 
@@ -957,6 +1024,26 @@ class _SDropdownState extends State<SDropdown> {
     _selectItem(value);
   }
 
+  void _selectNextItem() {
+    final int currentIndex = _currentSelection != null
+        ? widget.items.indexOf(_currentSelection!)
+        : -1;
+    final int nextIndex =
+        currentIndex == -1 ? 0 : (currentIndex + 1) % widget.items.length;
+    _selectItem(widget.items[nextIndex]);
+  }
+
+  void _selectPreviousItem() {
+    final int currentIndex = _currentSelection != null
+        ? widget.items.indexOf(_currentSelection!)
+        : -1;
+    int previousIndex = currentIndex == -1 ? 0 : currentIndex - 1;
+    if (previousIndex < 0) {
+      previousIndex = widget.items.length - 1;
+    }
+    _selectItem(widget.items[previousIndex]);
+  }
+
   void _setPointerHighlight(int index) {
     if (!_isExpanded || index < 0 || index >= _visibleOptions.length) {
       return;
@@ -970,21 +1057,6 @@ class _SDropdownState extends State<SDropdown> {
       _keyboardNavigationActive = true;
       _highlightedIndex = index;
       // Don't update _scrollTargetIndex on hover - only keyboard navigation should trigger autoscroll
-    }, rebuildOverlay: true);
-  }
-
-  void _ensureHighlightedVisible() {
-    if (!_isExpanded || _highlightedIndex == null) {
-      return;
-    }
-
-    final int target = _highlightedIndex!;
-    if (_scrollTargetIndex == target) {
-      return;
-    }
-
-    _setStateSafely(() {
-      _scrollTargetIndex = target;
     }, rebuildOverlay: true);
   }
 
@@ -1122,155 +1194,151 @@ class _SDropdownState extends State<SDropdown> {
       overlayHeightValue = 170;
     }
 
-    return Sizer(builder: (context, orientation, screenType) {
-      return Box(
-        width: 100.w,
-        height: 100.h,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () {
-                  if (widget.canCloseOutsideBounds) {
-                    _closeWithoutSelection();
-                  }
-                },
-                child: Container(color: Colors.transparent),
-              ),
-            ),
-            CompositedTransformFollower(
-              link: _layerLink,
-              showWhenUnlinked: false,
-              offset: Offset(0, buttonSize.height + 4),
-              child: STweenAnimationBuilder<double>(
-                key: ValueKey(_animationTrigger),
-                tween: Tween<double>(
-                    begin: 0.0, end: _animationTrigger ? 1.0 : 0.0),
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
-                builder: (context, animValue, child) {
-                  return Opacity(
-                    opacity: animValue,
-                    child: ClipRect(
-                      child: SizedBox(
-                        width: overlayWidth,
-                        height: overlayHeightValue * animValue,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: finalDecoration.expandedFillColor,
-                              border: finalDecoration.expandedBorder,
-                              borderRadius:
-                                  finalDecoration.expandedBorderRadius,
-                              boxShadow: finalDecoration.expandedShadow ??
-                                  [
-                                    BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.1),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                            ),
-                            child: IndexScrollListViewBuilder(
-                              controller: _itemsScrollController,
-                              padding: finalDecoration.itemsListPadding,
-                              shrinkWrap: true,
-                              itemCount: _visibleOptions.length,
-                              indexToScrollTo: _scrollTargetIndex,
-                              autoScrollMaxFrameDelay:
-                                  widget.autoScrollMaxFrameDelay,
-                              autoScrollEndOfFrameDelay:
-                                  widget.autoScrollEndOfFrameDelay,
-                              physics: const BouncingScrollPhysics(),
-                              showScrollbar: true,
-                              scrollbarThumbVisibility: true,
-                              scrollbarTrackVisibility: true,
-                              suppressPlatformScrollbars: true,
-                              scrollAlignment: 0.2,
-                              itemBuilder: (context, index) {
-                                final _DropdownOption option =
-                                    _visibleOptions[index];
-                                final bool isSelected =
-                                    option.value == _currentSelection;
-                                final bool isHighlighted =
-                                    _keyboardNavigationActive &&
-                                        _highlightedIndex == index;
+    return
+        //Center widget to ensure TapRegion covers the entire screen
+        //and to ensure the overlay maintains correct dimensions given
+        Center(
+      child: CompositedTransformFollower(
+        link: _layerLink,
+        showWhenUnlinked: false,
+        offset: Offset(0, buttonSize.height + 4),
+        child: STweenAnimationBuilder<double>(
+          key: ValueKey(_animationTrigger),
+          tween: Tween<double>(begin: 0.0, end: _animationTrigger ? 1.0 : 0.0),
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          builder: (context, animValue, child) {
+            return Opacity(
+              opacity: animValue,
+              child: ClipRect(
+                child: SizedBox(
+                  width: overlayWidth,
+                  height: overlayHeightValue * animValue,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: TapRegion(
+                      groupId: tapRegionID,
+                      onTapOutside: (event) {
+                        // debugPrint('SDropdown: Tap outside detected');
+                        if (widget.canCloseOutsideBounds) {
+                          _closeWithoutSelection();
+                        }
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: finalDecoration.expandedFillColor,
+                          border: finalDecoration.expandedBorder,
+                          borderRadius: finalDecoration.expandedBorderRadius,
+                          boxShadow: finalDecoration.expandedShadow ??
+                              [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                        ),
+                        child: IndexScrollListViewBuilder(
+                          controller: _itemsScrollController,
+                          padding: finalDecoration.itemsListPadding,
+                          shrinkWrap: true,
+                          itemCount: _visibleOptions.length,
+                          indexToScrollTo: _scrollTargetIndex,
+                          scrollAnimationDuration:
+                              const Duration(milliseconds: 300),
+                          onScrolledTo: (index) {
+                            if (_scrollTargetIndex != index) {
+                              _scrollTargetIndex = index;
+                            }
+                          },
+                          autoScrollMaxFrameDelay:
+                              widget.autoScrollMaxFrameDelay,
+                          autoScrollEndOfFrameDelay:
+                              widget.autoScrollEndOfFrameDelay,
+                          physics: const BouncingScrollPhysics(),
+                          showScrollbar: true,
+                          scrollbarThumbVisibility: true,
+                          scrollbarTrackVisibility: true,
+                          suppressPlatformScrollbars: true,
+                          scrollAlignment: 0.2,
+                          itemBuilder: (context, index) {
+                            final _DropdownOption option =
+                                _visibleOptions[index];
+                            final bool isSelected =
+                                option.value == _currentSelection;
+                            final bool isHighlighted =
+                                _keyboardNavigationActive &&
+                                    _highlightedIndex == index;
 
-                                final TextStyle itemStyle =
-                                    widget.itemSpecificStyles?[option.value] ??
-                                        finalDecoration.listItemStyle ??
-                                        const TextStyle(fontSize: 14);
+                            final TextStyle itemStyle =
+                                widget.itemSpecificStyles?[option.value] ??
+                                    finalDecoration.listItemStyle ??
+                                    const TextStyle(fontSize: 14);
 
-                                final ColorScheme colorScheme =
-                                    Theme.of(context).colorScheme;
-                                final bool isActiveSelection =
-                                    isSelected && isHighlighted;
-                                final Color highlightColor = colorScheme.primary
-                                    .withValues(
-                                        alpha: isActiveSelection ? 0.3 : 0.22);
-                                final Color selectedColor = colorScheme.primary
-                                    .withValues(
-                                        alpha: isActiveSelection ? 0.18 : 0.08);
-                                final Color resolvedBackground = isSelected
-                                    ? highlightColor
-                                    : isHighlighted
-                                        ? selectedColor
-                                        : Colors.transparent;
-                                final Color resolvedBorder = isSelected
-                                    ? colorScheme.primary.withValues(
-                                        alpha: isActiveSelection ? 0.75 : 0.55)
+                            final ColorScheme colorScheme =
+                                Theme.of(context).colorScheme;
+                            final bool isActiveSelection =
+                                isSelected && isHighlighted;
+                            final Color highlightColor = colorScheme.primary
+                                .withValues(
+                                    alpha: isActiveSelection ? 0.3 : 0.22);
+                            final Color selectedColor = colorScheme.primary
+                                .withValues(
+                                    alpha: isActiveSelection ? 0.18 : 0.08);
+                            final Color resolvedBackground = isSelected
+                                ? highlightColor
+                                : isHighlighted
+                                    ? selectedColor
                                     : Colors.transparent;
+                            final Color resolvedBorder = isSelected
+                                ? colorScheme.primary.withValues(
+                                    alpha: isActiveSelection ? 0.75 : 0.55)
+                                : Colors.transparent;
 
-                                return MouseRegion(
-                                  cursor: SystemMouseCursors.click,
-                                  onEnter: (_) => _setPointerHighlight(index),
-                                  onHover: (_) => _setPointerHighlight(index),
-                                  child: GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () => _selectItem(option.value),
-                                    child: AnimatedContainer(
-                                      duration:
-                                          const Duration(milliseconds: 120),
-                                      curve: Curves.easeOut,
-                                      padding: finalDecoration.listItemPadding,
-                                      decoration: BoxDecoration(
-                                        color: resolvedBackground,
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(
-                                          color: resolvedBorder,
-                                          width: isSelected ? 1 : 0,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        option.displayText,
-                                        style: itemStyle.copyWith(
-                                          fontWeight:
-                                              isSelected || isHighlighted
-                                                  ? FontWeight.w600
-                                                  : FontWeight.normal,
-                                        ),
-                                        maxLines: finalDecoration.maxLines ?? 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
+                            return MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              onEnter: (_) => _setPointerHighlight(index),
+                              onHover: (_) => _setPointerHighlight(index),
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => _selectItem(option.value),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 120),
+                                  curve: Curves.easeOut,
+                                  padding: finalDecoration.listItemPadding,
+                                  decoration: BoxDecoration(
+                                    color: resolvedBackground,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: resolvedBorder,
+                                      width: isSelected ? 1 : 0,
                                     ),
                                   ),
-                                );
-                              },
-                            ),
-                          ),
+                                  child: Text(
+                                    option.displayText,
+                                    style: itemStyle.copyWith(
+                                      fontWeight: isSelected || isHighlighted
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                    ),
+                                    maxLines: finalDecoration.maxLines ?? 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
-            ),
-          ],
+            );
+          },
         ),
-      );
-    });
+      ),
+    );
   }
 }
 

@@ -89,6 +89,7 @@ class SDropdownDecoration {
   const SDropdownDecoration({
     this.closedFillColor,
     this.expandedFillColor,
+    this.headerExpandedColor,
     this.closedShadow,
     this.expandedShadow,
     this.closedSuffixIcon,
@@ -113,7 +114,6 @@ class SDropdownDecoration {
     this.overlayHeight,
     this.overlayWidth,
     this.maxLines,
-    this.headerExpandedColor,
   });
 
   /// Default decoration for SDropdown

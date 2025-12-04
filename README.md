@@ -2,7 +2,6 @@
 
 Flexible, lightweight Flutter dropdown (SDropdown) offering precise overlay control, keyboard navigation, controller-based actions, per-item styles, and responsive sizing.
 
-Current version: 2.0.0
 
 ## Example app
 
@@ -18,7 +17,7 @@ For use, add the following to your package's `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  s_dropdown: ^2.0.0
+  s_dropdown: ^2.1.0
 ```
 
 
@@ -108,6 +107,11 @@ controller.highlightAtIndex(1); // highlight the 2nd item
 controller.highlightItem('B'); // highlight item 'B' by value
 controller.selectIndex(2); // select the 3rd item programmatically
 controller.selectItem('A'); // select item 'A' programmatically
+
+// Navigate to next/previous item with automatic wrapping
+controller.selectNext(); // select next item (wraps to first item if at end)
+controller.selectPrevious(); // select previous item (wraps to last item if at start)
+
 // Note: highlightAtIndex/selectIndex use indices from the original `items` list (0-based). If `excludeSelected` is true, the overlay may not show the item until re-opened and the highlight may be adjusted accordingly.
 
 Note: When you call `controller.open()` (and other controller actions), the dropdown requests focus automatically (when `useKeyboardNavigation` is true), so you can immediately use arrow keys and Enter/Escape without clicking the widget first.
@@ -141,6 +145,8 @@ controller.selectIndex(2); // Selects 'Cherry' regardless; onChanged will run an
 - Advanced styling with `SDropdownDecoration`
 - Keyboard & pointer interaction, highlight management, and overlay controls via `SDropdownController`
   - Programmatic open requests focus automatically to enable immediate keyboard navigation.
+  - Navigation methods: `selectNext()` and `selectPrevious()` with wrapping support
+  - Exposed `tapRegionGroupId` for custom TapRegion grouping to prevent unwanted overlay closure
 
 ### Advanced features
 
@@ -150,7 +156,9 @@ controller.selectIndex(2); // Selects 'Cherry' regardless; onChanged will run an
 - `selectedItemText` - override the header display text for a selected item (useful when `customItemsNamesDisplayed` is used)
 - `overlayWidth` / `overlayHeight` - explicitly control overlay sizing independent of the button
 - `validateOnChange` and `validator` - integrate with basic validation flows
-- `SDropdownController` - programmatic expansion, collapse, toggling, and highlight navigation
+- `SDropdownController` - programmatic expansion, collapse, toggling, highlight navigation, and item selection
+  - `selectNext()` and `selectPrevious()` methods for sequential navigation with automatic wrapping
+  - `tapRegionGroupId` property to enable custom control accessibility without dismissing the overlay
 - `copyWith` - copy a widget with modified properties to reuse existing settings
 
 ## Example
