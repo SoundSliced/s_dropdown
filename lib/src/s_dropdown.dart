@@ -538,65 +538,73 @@ class _SDropdownState extends State<SDropdown> {
 
   @override
   Widget build(BuildContext context) {
+    final double effectiveScale = widget.scale ?? 1.0;
+
+    Widget buildCore({required bool hasFocus}) {
+      return CompositedTransformTarget(
+        link: _layerLink,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOut,
+          decoration: widget.useKeyboardNavigation
+              ? BoxDecoration(
+                  borderRadius:
+                      widget.closedBorderRadius ?? BorderRadius.circular(8),
+                  boxShadow: hasFocus
+                      ? [
+                          BoxShadow(
+                            color: Colors.blue.shade600.withValues(alpha: 0.45),
+                            blurRadius: 6 * effectiveScale,
+                            spreadRadius: 0.5 * effectiveScale,
+                          ),
+                        ]
+                      : null,
+                  border: Border.all(
+                    width: (hasFocus ? 1 : 0.5) * effectiveScale,
+                    color: hasFocus
+                        ? Colors.blue.shade600
+                        : (widget.closedBorder?.top.color ??
+                            Colors.transparent),
+                  ),
+                )
+              : null,
+          child: _buildDropdownButton(),
+        ),
+      );
+    }
+
     final dropdownWidget = SizedBox(
       width: widget.width,
       height: widget.height,
       child: Transform.scale(
-        scale: widget.scale ?? 1.0,
+        scale: effectiveScale,
         alignment: widget.alignment ?? Alignment.center,
-        child: CompositedTransformTarget(
-          link: _layerLink,
-          child: _buildDropdownButton(),
-        ),
+        child: widget.useKeyboardNavigation
+            ? Focus(
+                focusNode: _effectiveFocusNode,
+                autofocus: widget.requestFocusOnInit,
+                canRequestFocus: widget.enabled,
+                onKeyEvent: _handleKeyEvent,
+                child: Builder(
+                  builder: (context) {
+                    final hasFocus = Focus.of(context).hasFocus;
+                    return Listener(
+                      onPointerDown: (_) {
+                        if (!hasFocus && _effectiveFocusNode != null) {
+                          FocusScope.of(context)
+                              .requestFocus(_effectiveFocusNode);
+                        }
+                      },
+                      child: buildCore(hasFocus: hasFocus),
+                    );
+                  },
+                ),
+              )
+            : buildCore(hasFocus: false),
       ),
     );
 
-    if (!widget.useKeyboardNavigation) {
-      return dropdownWidget;
-    }
-
-    return Focus(
-      focusNode: _effectiveFocusNode,
-      autofocus: widget.requestFocusOnInit,
-      canRequestFocus: widget.enabled,
-      onKeyEvent: _handleKeyEvent,
-      child: Builder(
-        builder: (context) {
-          final hasFocus = Focus.of(context).hasFocus;
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 140),
-            curve: Curves.easeOut,
-            decoration: BoxDecoration(
-              borderRadius:
-                  widget.closedBorderRadius ?? BorderRadius.circular(8),
-              boxShadow: hasFocus
-                  ? [
-                      BoxShadow(
-                        color: Colors.blue.shade600.withValues(alpha: 0.45),
-                        blurRadius: 6,
-                        spreadRadius: 0.5,
-                      ),
-                    ]
-                  : null,
-              border: Border.all(
-                width: hasFocus ? 1 : 0.5,
-                color: hasFocus
-                    ? Colors.blue.shade600
-                    : (widget.closedBorder?.top.color ?? Colors.transparent),
-              ),
-            ),
-            child: Listener(
-              onPointerDown: (_) {
-                if (!hasFocus && _effectiveFocusNode != null) {
-                  FocusScope.of(context).requestFocus(_effectiveFocusNode);
-                }
-              },
-              child: dropdownWidget,
-            ),
-          );
-        },
-      ),
-    );
+    return dropdownWidget;
   }
 
   void _toggleDropdown() {

@@ -17,7 +17,7 @@ For use, add the following to your package's `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  s_dropdown: ^2.1.0
+  s_dropdown: ^2.1.1
 ```
 
 

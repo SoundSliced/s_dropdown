@@ -1,4 +1,15 @@
 
+```markdown
+
+## 2.1.1
+
+Bug fix release for keyboard navigation focus styling.
+
+Changes:
+- Fixed: Focus border now properly scales when `scale` parameter is applied to the dropdown widget.
+- Fixed: Focus border shadow blur radius and spread radius now scale proportionally with the widget.
+- Fixed: Focus border width now scales proportionally with the widget.
+
 ## 2.1.0
 
 This release adds programmatic navigation methods and improves control accessibility in dropdown overlays.
