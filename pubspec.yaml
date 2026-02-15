@@ -3,7 +3,7 @@ description: "Flexible, lightweight Flutter dropdown (SDropdown) with precise ov
 license: MIT
 issue_tracker: https://github.com/SoundSliced/s_dropdown/issues
 repository: https://github.com/SoundSliced/s_dropdown
-version: 3.0.0
+version: 3.0.1
 homepage: https://github.com/SoundSliced/s_dropdown
 
 environment:
@@ -13,7 +13,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  s_packages: ^1.1.2
+  s_packages: ^1.4.1
 
 dev_dependencies:
   flutter_test:
