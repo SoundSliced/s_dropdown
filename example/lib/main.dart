@@ -1,4 +1,5 @@
 import 'package:s_dropdown/s_dropdown.dart';
+import 'package:sizer/sizer.dart';
 
 void main() {
   runApp(const ExampleApp());
