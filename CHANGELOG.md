@@ -1,3 +1,12 @@
+
+
+## 4.1.1
+- `s_packages` dependency upgraded to ^3.5.1
+	- **`s_dropdown` clear-button visibility fix:**
+		- The inline clear button now appears only when a real selection is present, including the initial selected item and any user-selected item.
+		- The clear button stays hidden when the dropdown is showing only the hint state, preventing a no-op clear affordance.
+		- Added a regression test covering the hint-only state to keep the suffix area behavior stable.
+
 ## [4.1.0]
 - `s_packages` dependency upgraded to ^3.5.0
 	- **`s_dropdown` clear-selection upgrade:**
