@@ -1,3 +1,11 @@
+## [4.1.0]
+- `s_packages` dependency upgraded to ^3.5.0
+	- **`s_dropdown` clear-selection upgrade:**
+		- Added a controller API to clear the current selection programmatically, with support for either restoring the initial item or clearing all the way back to the hint state.
+		- Added an inline clear suffix button powered by `SInkButton`, so the current selection can be cleared directly from the dropdown header.
+		- Preserved overlay-open and overlay-closed behavior so clearing works consistently in both states.
+		- Added focused tests and example updates covering both clear-to-initial and clear-to-hint flows.
+
 ## [4.0.0]
 - `s_packages` dependency upgraded to ^3.0.0
 
